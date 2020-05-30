@@ -1,0 +1,35 @@
+{
+  "name": "@brwong/code-companion-mvp",
+  "author": "Brandon Wong <projects@brwong.net> (https://www.brwong.net/)",
+  "version": "0.1.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test-build/main.js",
+    "compile-prod": "cross-env NODE_ENV=production npm run compile",
+    "compile": "npm run compile-src && npm run compile-test",
+    "compile-test": "babel test --out-dir test-build",
+    "compile-src": "babel src --out-dir build",
+    "watch": "nodemon --watch src --watch test --exec \"npm run compile --silent\"",
+    "watchrun": "nodemon --watch src --watch test --exec \"npm run compile --silent && node build/main.js\"",
+    "serverwatch": "nodemon --watch src --watch test --exec \"npm run compile --silent && node build/server.js\"",
+    "testwatch": "nodemon --watch src --watch test --exec \"npm run compile --silent && npm test\""
+  },
+  "directories": {
+    "test": "test"
+  },
+  "private": true,
+  "dependencies": {
+    "cross-env": "7.0.2",
+    "mz": "2.7.0"
+  },
+  "devDependencies": {
+    "babel-cli": "6.26.0",
+    "babel-plugin-transform-object-rest-spread": "6.26.0",
+    "babel-plugin-transform-remove-console": "6.9.4",
+    "babel-plugin-transform-runtime": "6.23.0",
+    "babel-preset-env": "1.7.0",
+    "nodemon": "2.0.4",
+    "tape": "5.0.1",
+    "tape-promise": "4.0.0"
+  }
+}
