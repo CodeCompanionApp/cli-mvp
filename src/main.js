@@ -4,10 +4,11 @@ import { promises as fspromises } from 'fs';
 import inquirer from 'inquirer';
 import { join as pathJoin } from 'path';
 
-const { readdir, mkdir } = fspromises;
+const { readdir, mkdir, stat, unlink } = fspromises;
 
-const cardLineLength = 50,
-    cardHorizontalBorder = '='.repeat(cardLineLength + 8);
+const cardLineLength = 100,
+    cardUpperBorder = '▛' + '▀'.repeat(cardLineLength + 2) + '▜',
+    cardLowerBorder = '▙' + '▄'.repeat(cardLineLength + 2) + '▟';
 
 (async function main() {
 
@@ -21,16 +22,9 @@ const cardLineLength = 50,
         },
         username = await inquirer.prompt(usernameQuestion);
 
-    console.log('username', username);
     printCard(`WELCOME TO CODE COMPANION - JAVASCRIPT,\n${username.username}!`);
 
-    let n = Math.floor(Math.random() * 1000);
-    printCard(`here's a random number: ${n}\nif it is even, then it will wait 3 secs`);
-
-    if( !(n % 2) ) {
-        printCard('waiting...');
-        await waitPro(3000);
-    }
+    await pauseForAnyKey();
 
     try {
         printCard('Searching for node...');
@@ -64,21 +58,77 @@ const cardLineLength = 50,
         }
     }
 
-    printCard(`I created a folder at\n${testFolderPath}.\n\nWith the aid of your code editor, add a file in that folder called main.js`);
+    const mainjs = pathJoin(testFolderPath, 'main.js');
 
-    //printCard('now that we have node.js...');
+    printCard(`I created a folder at\n${testFolderPath}.\n\nWith the aid of your code editor, add a file in that folder called main.js\n(it can be empty for now, just make sure to save it)`);
 
-    //console.log('executing', (await exec('node -p "3+4"'))[0]);
+    let fileCreated = false;
+    while( !fileCreated ) {
+        try {
+            const dets = await stat(mainjs);
+            fileCreated = dets.ctimeMs;
+        }
+        catch(e) {
+            await waitPro(1000);
+        }
+    }
 
-    console.log('dir', await readdir(testFolderPath));
+    let fileLastModified = fileCreated;
 
-    printCard('all done!');
+    printCard('Excellent!\nNow type in the following:\n\nconsole.log("Hello, world!");\n\nand save the file');
+
+    while( fileLastModified === fileCreated ) {
+        await waitPro(1000);
+        const dets = await stat(mainjs);
+        fileLastModified = dets.ctimeMs;
+    }
+
+    let correctOutput = false;
+    while( !correctOutput ) {
+        try {
+            const result = (await exec(`node ${mainjs}`))[0].trim();
+            correctOutput = result === 'Hello, world!';
+
+            if( !correctOutput ) {
+                printCard(`The output of the program doesn't match "Hello, world!"\nModify your js file so that it matches exactly:\n\nconsole.log("Hello, world!");\n\nand save the file again.`);
+                const tryAgain = fileLastModified;
+                while( fileLastModified === tryAgain ) {
+                    await waitPro(1000);
+                    const dets = await stat(mainjs);
+                    fileLastModified = dets.ctimeMs;
+                }
+            }
+        }
+        catch(e) {
+            console.error('error in execution', e.message || e);
+            const tryAgain = fileLastModified;
+            while( fileLastModified === tryAgain ) {
+                await waitPro(1000);
+                const dets = await stat(mainjs);
+                fileLastModified = dets.ctimeMs;
+            }
+        }
+    }
+
+    printCard(`Well done, ${username.username}!`);
+    process.exit();
 }());
 
 async function testFolderInit() {
     const basename = pathJoin(__dirname, '..', 'learning');
     //TODO: if folder exists, either resume program from what is complete, or create new folder plus number
-    await mkdir(basename, {recursive: true});
+    try {
+        await mkdir(basename);
+    }
+    catch(e) {
+        //TEMP: delete file
+        try {
+            await unlink(pathJoin(basename, 'main.js'));
+        }
+        catch(e) {
+            //console.error('error', e.message || e);
+        }
+    }
     return basename;
 }
 
@@ -95,18 +145,30 @@ function printCard(content = '') {
             return acc;
         }, []),
         formattedLines = lines.map(function addBorder(line) {
-            return '=== ' + line.padEnd(cardLineLength, ' ') + ' ===';
+            return '▌ ' + line.padEnd(cardLineLength, ' ') + ' ▐';
         });
 
     console.log('');
-    console.log(cardHorizontalBorder);
+    console.log(cardUpperBorder);
     formattedLines.forEach(function print(line) {
         console.log(line);
     })
-    console.log(cardHorizontalBorder);
+    console.log(cardLowerBorder);
     console.log('');
 }
 
+function pauseForAnyKey() {
+    return new Promise(function pro(resolve, reject) {
+        console.log('Press any key to continue');
+
+        process.stdin.setRawMode = true;
+        process.stdin.resume();
+        process.stdin.once('data', function () {
+            process.stdin.setRawMode = false;
+            resolve();
+        });
+    });
+}
 
 function waitPro(n = 1000) {
     return new Promise(function pro(resolve, reject) {
