@@ -27,36 +27,32 @@ const cardLineLength = 100,
     await pauseForAnyKey();
 
     try {
-        printCard('Searching for node...');
+        console.log('Searching for node...');
+        await waitPro(1000);
         await exec('which node');
     }
     catch(e) {
-        printCard(`you don't have node on your system -\nplease install`);
-        let ready = false;
+        let ready = false,
+            checks = 0;
+        printCard(`You don't have node on your system - please install\n\nOne way is to go to https://nodejs.org/en/ and download the "current" version, or go to https://nodejs.org/en/download/ and follow the directions`);
         while(!ready) {
-            let goAhead = false;
-            const readyOrNotQuestion = {
-                    type: 'confirm',
-                    name: 'goNoGo',
-                    message: 'Confirm when you are ready to continue',
-                },
-                readyOrNot = await inquirer.prompt(readyOrNotQuestion);
-            if( readyOrNot.goNoGo ) {
-                console.log('it is a yes');
-            }
-            else {
-                console.log('it is a no');
-                //TODO
-            }
             try {
+                if( checks === 300 ) {// waiting for longer than five minutes
+                    //TODO
+                    printCard(`Are you having difficulty?`);
+                }
                 await exec('which node');
                 ready = true;
             }
             catch(e) {
-                console.error('error', e.message || e);
+                //console.error('error', e.message || e);
+                checks += 1;
+                await waitPro(1000);
             }
         }
     }
+
+    await pauseForAnyKey('Great! It seems that node is correctly installed on your computer!\n\nPress any key to continue', true);
 
     const mainjs = pathJoin(testFolderPath, 'main.js');
 
@@ -157,9 +153,14 @@ function printCard(content = '') {
     console.log('');
 }
 
-function pauseForAnyKey() {
+function pauseForAnyKey(message = 'Press any key to continue', card = false) {
     return new Promise(function pro(resolve, reject) {
-        console.log('Press any key to continue');
+        if( card ) {
+            printCard(message);
+        }
+        else {
+            console.log(message);
+        }
 
         process.stdin.setRawMode = true;
         process.stdin.resume();
