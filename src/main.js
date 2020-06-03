@@ -73,42 +73,44 @@ const cardLineLength = 100,
 
     printCard('Excellent!\nNow type in the following:\n\nconsole.log("Hello, world!");\n\nand save the file');
 
-    while( fileLastModified === fileCreated ) {
-        await waitPro(1000);
-        const dets = await stat(mainjs);
-        fileLastModified = dets.ctimeMs;
-    }
+    await waitForFileChange(mainjs);
 
     let correctOutput = false;
     while( !correctOutput ) {
         try {
             const result = (await exec(`node ${mainjs}`))[0].trim();
+            printCard(`Your program's output:\n\n${result}`);
             correctOutput = result === 'Hello, world!';
 
             if( !correctOutput ) {
                 printCard(`The output of the program doesn't match "Hello, world!"\nModify your js file so that it matches exactly:\n\nconsole.log("Hello, world!");\n\nand save the file again.`);
-                const tryAgain = fileLastModified;
-                while( fileLastModified === tryAgain ) {
-                    await waitPro(1000);
-                    const dets = await stat(mainjs);
-                    fileLastModified = dets.ctimeMs;
-                }
+                await waitForFileChange(mainjs);
             }
         }
         catch(e) {
             console.error('error in execution', e.message || e);
-            const tryAgain = fileLastModified;
-            while( fileLastModified === tryAgain ) {
-                await waitPro(1000);
-                const dets = await stat(mainjs);
-                fileLastModified = dets.ctimeMs;
-            }
+            await waitForFileChange(mainjs);
         }
     }
 
     printCard(`Well done, ${username.username}!`);
     process.exit();
 }());
+
+async function waitForFileChange(path) {
+    const before = Date.now();
+    let modified = 0;
+    while( modified <= before ) {
+        try {
+            await waitPro(1000);
+            const dets = await stat(path);
+            modified = dets.ctimeMs;
+        }
+        catch(e) {
+            // pass
+        }
+    }
+}
 
 async function testFolderInit() {
     const basename = pathJoin(__dirname, '..', 'learning');
