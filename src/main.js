@@ -14,6 +14,9 @@ const cardLineLength = 100,
 
     const testFolderPath = await testFolderInit();
 
+    // -------------------
+    // ASK FOR USER'S NAME
+    // -------------------
     const usernameQuestion = {
             type: 'input',
             name: 'username',
@@ -22,55 +25,48 @@ const cardLineLength = 100,
         },
         username = await inquirer.prompt(usernameQuestion);
 
+    // -------
+    // WELCOME
+    // -------
     printCard(`WELCOME TO CODE COMPANION - JAVASCRIPT,\n${username.username}!`);
 
     await pauseForAnyKey();
 
-    try {
-        console.log('Searching for node...');
-        await waitPro(1000);
-        await exec('which node');
-    }
-    catch(e) {
-        let ready = false,
-            checks = 0;
+    // --------------
+    // CHECK FOR NODE
+    // --------------
+    console.log('Searching for node...');
+    await waitPro(1000);
+    if( !(await checkProgramExistence('node')) ) {
+        let checks = 0;
+
         printCard(`You don't have node on your system - please install\n\nOne way is to go to https://nodejs.org/en/ and download the "current" version, or go to https://nodejs.org/en/download/ and follow the directions`);
-        while(!ready) {
-            try {
-                if( checks === 300 ) {// waiting for longer than five minutes
-                    //TODO
-                    printCard(`Are you having difficulty?`);
-                }
-                await exec('which node');
-                ready = true;
+
+        while( !(await checkProgramExistence('node')) ) {
+            checks += 1;
+            if( checks === 300 ) {// waiting for longer than five minutes
+                //TODO
+                printCard(`Are you having difficulty?`);
             }
-            catch(e) {
-                //console.error('error', e.message || e);
-                checks += 1;
-                await waitPro(1000);
-            }
+
+            await waitPro(1000);
         }
     }
 
     await pauseForAnyKey('Great! It seems that node is correctly installed on your computer!\n\nPress any key to continue', true);
 
+    // ----------------
+    // CREATE A JS FILE
+    // ----------------
     const mainjs = pathJoin(testFolderPath, 'main.js');
 
     printCard(`I created a folder at\n${testFolderPath}.\n\nWith the aid of your code editor, add a file in that folder called main.js\n(it can be empty for now, just make sure to save it)`);
 
-    let fileCreated = false;
-    while( !fileCreated ) {
-        try {
-            const dets = await stat(mainjs);
-            fileCreated = dets.ctimeMs;
-        }
-        catch(e) {
-            await waitPro(1000);
-        }
-    }
+    await waitForFileChange(mainjs);
 
-    let fileLastModified = fileCreated;
-
+    // ---------------
+    // MODIFY THE FILE
+    // ---------------
     printCard('Excellent!\nNow type in the following:\n\nconsole.log("Hello, world!");\n\nand save the file');
 
     await waitForFileChange(mainjs);
@@ -93,9 +89,22 @@ const cardLineLength = 100,
         }
     }
 
+    // ----
+    // DONE
+    // ----
     printCard(`Well done, ${username.username}!`);
     process.exit();
 }());
+
+async function checkProgramExistence(program) {
+    try {
+        await exec(`which ${program}`);
+        return true;
+    }
+    catch(e) {
+        return false;
+    }
+}
 
 async function waitForFileChange(path) {
     const before = Date.now();
