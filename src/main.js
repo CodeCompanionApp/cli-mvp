@@ -4,7 +4,7 @@ import { promises as fspromises } from 'fs';
 import inquirer from 'inquirer';
 import { join as pathJoin } from 'path';
 
-const { readdir, mkdir, stat, unlink } = fspromises;
+const { readdir, mkdir, stat, unlink, writeFile } = fspromises;
 
 const cardLineLength = 100,
     cardUpperBorder = '▛' + '▀'.repeat(cardLineLength + 2) + '▜',
@@ -12,7 +12,9 @@ const cardLineLength = 100,
 
 (async function main() {
 
-    const testFolderPath = await testFolderInit();
+    const testFolderPath = await testFolderInit(),
+        lessonConfigPath = pathJoin(testFolderPath, '.cc.config'),
+        lessonConfig = { };
 
     // -------------------
     // ASK FOR USER'S NAME
@@ -24,6 +26,9 @@ const cardLineLength = 100,
             default: 'js learner',
         },
         username = await inquirer.prompt(usernameQuestion);
+
+    lessonConfig.username = username.username;
+    await writeFile(lessonConfigPath, JSON.stringify(lessonConfig, true, 2), 'utf8');
 
     // -------
     // WELCOME
@@ -80,6 +85,32 @@ const cardLineLength = 100,
 
             if( !correctOutput ) {
                 printCard(`The output of the program doesn't match "Hello, world!"\nModify your js file so that it matches exactly:\n\nconsole.log("Hello, world!");\n\nand save the file again.`);
+                await waitForFileChange(mainjs);
+            }
+        }
+        catch(e) {
+            console.error('error in execution', e.message || e);
+            await waitForFileChange(mainjs);
+        }
+    }
+
+    printCard(`Congratulations, you just wrote your first line of javascript code!`);
+
+    await waitPro(2000);
+
+    printCard(`The "console.log" function prints things to screen.\n\nGo ahead and modify your "Hello, world!" message to something else, and save it again.`);
+
+    await waitForFileChange(mainjs);
+
+    correctOutput = false;
+    while( !correctOutput ) {
+        try {
+            const result = (await exec(`node ${mainjs}`))[0].trim();
+            printCard(`Your program's output:\n\n${result}`);
+            correctOutput = result !== 'Hello, world!' && result !== '';
+
+            if( !correctOutput ) {
+                printCard(`Hmm... that doesn't seem right. Try modifying the text between the quotation marks (and nothing else about the code) and save the file again.`);
                 await waitForFileChange(mainjs);
             }
         }
