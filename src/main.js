@@ -16,9 +16,9 @@ const cardLineLength = 100,
         lessonConfigPath = pathJoin(testFolderPath, '.cc.config'),
         lessonConfig = { };
 
-    // -------------------
-    // ASK FOR USER'S NAME
-    // -------------------
+    // -------------------------------
+    // PRE-COURSE: ASK FOR USER'S NAME
+    // -------------------------------
     const usernameQuestion = {
             type: 'input',
             name: 'username',
@@ -37,9 +37,9 @@ const cardLineLength = 100,
 
     await pauseForAnyKey();
 
-    // --------------
-    // CHECK FOR NODE
-    // --------------
+    // ---------------------------
+    // LESSON 0.1 - CHECK FOR NODE
+    // ---------------------------
     console.log('Searching for node...');
     await waitPro(1000);
     if( !(await checkProgramExistence('node')) ) {
@@ -60,18 +60,18 @@ const cardLineLength = 100,
 
     await pauseForAnyKey('Great! It seems that node is correctly installed on your computer!\n\nPress any key to continue', true);
 
-    // ----------------
-    // CREATE A JS FILE
-    // ----------------
+    // ---------------------------------------------------
+    // LESSON 0.2 - INSTALL AN EDITOR and CREATE A JS FILE
+    // ---------------------------------------------------
     const mainjs = pathJoin(testFolderPath, 'main.js');
 
     printCard(`I created a folder at\n${testFolderPath}.\n\nWith the aid of your code editor, add a file in that folder called main.js\n(it can be empty for now, just make sure to save it)`);
 
     await waitForFileChange(mainjs);
 
-    // ---------------
-    // MODIFY THE FILE
-    // ---------------
+    // -----------------------------
+    // LESSON 1 - FIRST LINE OF CODE
+    // -----------------------------
     printCard('Excellent!\nNow type in the following:\n\nconsole.log("Hello, world!");\n\nand save the file');
 
     await waitForFileChange(mainjs);
@@ -119,6 +119,22 @@ const cardLineLength = 100,
             await waitForFileChange(mainjs);
         }
     }
+
+    // ---------------------
+    // LESSON 2 - DATA TYPES
+    // ---------------------
+
+    // NUMBERS
+    printCard(`Now let's explore different types of data that javascript can manipulate.\n\nThe first type we'll look at are numbers.\n\n...\n\nDelete the text (including the quotation marks) from your console.log call, and replace it with a mathematical equation whose answer is 42.\nHere's an example (but make your own!):\n\nconsole.log(1 + 6 * 7 - 1)`);
+    //TODO
+
+    // STRINGS
+
+    // BOOLEANS
+
+    // ARRAYS
+
+    // OBJECTS
 
     // ----
     // DONE
